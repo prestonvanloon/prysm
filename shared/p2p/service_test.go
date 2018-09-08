@@ -8,26 +8,30 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/golang/protobuf/proto"
 	floodsub "github.com/libp2p/go-floodsub"
 	floodsubPb "github.com/libp2p/go-floodsub/pb"
-	bhost "github.com/libp2p/go-libp2p-blankhost"
+	bhost "github.com/libp2p/go-libp2p/p2p/host/basic"
 	swarmt "github.com/libp2p/go-libp2p-swarm/testing"
 	shardpb "github.com/prysmaticlabs/prysm/proto/sharding/p2p/v1"
 	testpb "github.com/prysmaticlabs/prysm/proto/testing"
 	"github.com/prysmaticlabs/prysm/shared"
 	"github.com/sirupsen/logrus"
 	logTest "github.com/sirupsen/logrus/hooks/test"
+	ipfslog "github.com/ipfs/go-log"
 )
 
 // Ensure that server implements service.
 var _ = shared.Service(&Server{})
 
+
 func init() {
 	logrus.SetLevel(logrus.DebugLevel)
 	logrus.SetOutput(ioutil.Discard)
+	ipfslog.SetDebugLogging()
 }
 
 func TestBroadcast(t *testing.T) {
@@ -71,7 +75,7 @@ func TestEmitFailsUnmarshal(t *testing.T) {
 func TestSubscribeToTopic(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 1*time.Second)
 	defer cancel()
-	h := bhost.NewBlankHost(swarmt.GenSwarm(t, ctx))
+	h := bhost.New(swarmt.GenSwarm(t, ctx))
 
 	gsub, err := floodsub.NewFloodSub(ctx, h)
 	if err != nil {
@@ -98,7 +102,7 @@ func TestSubscribeToTopic(t *testing.T) {
 func TestSubscribe(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 1*time.Second)
 	defer cancel()
-	h := bhost.NewBlankHost(swarmt.GenSwarm(t, ctx))
+	h := bhost.New(swarmt.GenSwarm(t, ctx))
 
 	gsub, err := floodsub.NewFloodSub(ctx, h)
 	if err != nil {
@@ -170,7 +174,7 @@ func TestRegisterTopic_WithoutAdapters(t *testing.T) {
 		t.Fatalf("Failed to create new server: %v", err)
 	}
 	topic := "test_topic"
-	testMessage := testpb.TestMessage{Foo: "bar"}
+	testMessage := &testpb.TestMessage{Foo: "bar"}
 
 	s.RegisterTopic(topic, testpb.TestMessage{})
 
@@ -181,10 +185,19 @@ func TestRegisterTopic_WithoutAdapters(t *testing.T) {
 	wait := make(chan struct{})
 	go func() {
 		defer close(wait)
-		<-ch
+		rcvd := <-ch
+		msg := rcvd.Data.(*testpb.TestMessage)
+		if msg.Foo != "bar" {
+			t.Errorf("Received unexpected message: %v", msg)
+		}
 	}()
 
-	if err := simulateIncomingMessage(t, s, topic, []byte{}); err != nil {
+	b, err := proto.Marshal(testMessage)
+	if err != nil {
+		t.Fatalf("Failed to marshal test message %v", err)
+	}
+
+	if err := simulateIncomingMessage(t, s, topic, &b); err != nil {
 		t.Errorf("Failed to send to topic %s", topic)
 	}
 
@@ -196,13 +209,13 @@ func TestRegisterTopic_WithoutAdapters(t *testing.T) {
 	}
 }
 
-func TestRegisterTopic_WithAdapers(t *testing.T) {
+func TestRegisterTopic_WithAdapters(t *testing.T) {
 	s, err := NewServer()
 	if err != nil {
 		t.Fatalf("Failed to create new server: %v", err)
 	}
 	topic := "test_topic"
-	testMessage := testpb.TestMessage{Foo: "bar"}
+	testMessage := &testpb.TestMessage{Foo: "bar"}
 
 	i := 0
 	var testAdapter Adapter = func(next Handler) Handler {
@@ -229,10 +242,19 @@ func TestRegisterTopic_WithAdapers(t *testing.T) {
 	wait := make(chan struct{})
 	go func() {
 		defer close(wait)
-		<-ch
+		rcvd := <-ch
+		msg := rcvd.Data.(*testpb.TestMessage)
+		if msg.Foo != "bar" {
+			t.Errorf("Received unexpected message: %v", msg)
+		}
 	}()
+	
+	b, err := proto.Marshal(testMessage)
+	if err != nil {
+		t.Fatalf("Failed to marshal test message %v", err)
+	}
 
-	if err := simulateIncomingMessage(t, s, topic, []byte{}); err != nil {
+	if err := simulateIncomingMessage(t, s, topic, &b); err != nil {
 		t.Errorf("Failed to send to topic %s", topic)
 	}
 
@@ -247,9 +269,9 @@ func TestRegisterTopic_WithAdapers(t *testing.T) {
 	}
 }
 
-func simulateIncomingMessage(t *testing.T, s *Server, topic string, b []byte) error {
+func simulateIncomingMessage(t *testing.T, s *Server, topic string, b *[]byte) error {
 	ctx := context.Background()
-	h := bhost.NewBlankHost(swarmt.GenSwarm(t, ctx))
+	h := bhost.New(swarmt.GenSwarm(t, ctx))
 
 	gsub, err := floodsub.NewFloodSub(ctx, h)
 	if err != nil {
@@ -262,7 +284,15 @@ func simulateIncomingMessage(t *testing.T, s *Server, topic string, b []byte) er
 	}
 
 	// Short timeout to allow libp2p to handle peer connection.
-	time.Sleep(time.Millisecond * 10)
+	time.Sleep(time.Millisecond * 100)
 
-	return gsub.Publish(topic, b)
+//	return gsub.Publish(topic, *b)
+//	fmt.Println("publishing")
+//	fmt.Println(pinfo)
+//	fmt.Println(s.host.Peerstore().Peers())
+//	fmt.Println(topic)
+	fmt.Println(s.gsub.ListPeers(topic))
+	fmt.Println(gsub.ListPeers(topic))
+	fmt.Println(s.host.ID())
+	return gsub.Publish(topic, *b)
 }

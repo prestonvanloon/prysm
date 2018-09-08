@@ -157,7 +157,7 @@ func (s *Server) Subscribe(msg interface{}, channel interface{}) event.Subscript
 }
 
 // Send a message to a specific peer.
-func (s *Server) Send(msg interface{}, peer Peer) {
+func (s *Server) Send(msg proto.Message, peer Peer) {
 	// TODO
 	// https://github.com/prysmaticlabs/prysm/issues/175
 
@@ -170,8 +170,7 @@ func (s *Server) Send(msg interface{}, peer Peer) {
 }
 
 // Broadcast a message to the world.
-func (s *Server) Broadcast(msg interface{}) {
-	// TODO: https://github.com/prysmaticlabs/prysm/issues/176
+func (s *Server) Broadcast(msg proto.Message) {
 	topic := s.topicMapping[reflect.TypeOf(msg)]
 	log.WithFields(logrus.Fields{
 		"topic": topic,
@@ -181,14 +180,7 @@ func (s *Server) Broadcast(msg interface{}) {
 		log.Warnf("Topic is unknown for message type %T. %v", msg, msg)
 	}
 
-	// TODO: Next assertion may fail if your msg is not a pointer to a msg.
-	m, ok := msg.(proto.Message)
-	if !ok {
-		log.Errorf("Message to broadcast (type: %T) is not a protobuf message: %v", msg, msg)
-		return
-	}
-
-	b, err := proto.Marshal(m)
+	b, err := proto.Marshal(msg)
 	if err != nil {
 		log.Errorf("Failed to marshal data for broadcast: %v", err)
 		return

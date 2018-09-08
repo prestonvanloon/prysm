@@ -11,6 +11,7 @@ import (
 	"github.com/prysmaticlabs/prysm/shared/p2p"
 	"github.com/prysmaticlabs/prysm/shared/testutil"
 	logTest "github.com/sirupsen/logrus/hooks/test"
+	"github.com/golang/protobuf/proto"
 )
 
 type mockP2P struct {
@@ -20,9 +21,9 @@ func (mp *mockP2P) Subscribe(msg interface{}, channel interface{}) event.Subscri
 	return new(event.Feed).Subscribe(channel)
 }
 
-func (mp *mockP2P) Broadcast(msg interface{}) {}
+func (mp *mockP2P) Broadcast(msg proto.Message) {}
 
-func (mp *mockP2P) Send(msg interface{}, peer p2p.Peer) {
+func (mp *mockP2P) Send(msg proto.Message, peer p2p.Peer) {
 }
 
 type mockChainService struct {
