@@ -2,7 +2,6 @@ package p2p
 
 import (
 	"context"
-	"io/ioutil"
 	"reflect"
 	"strings"
 	"sync"
@@ -27,7 +26,6 @@ var _ = shared.Service(&Server{})
 
 func init() {
 	logrus.SetLevel(logrus.DebugLevel)
-	logrus.SetOutput(ioutil.Discard)
 }
 
 func TestBroadcast(t *testing.T) {
@@ -181,10 +179,17 @@ func TestRegisterTopic_WithoutAdapters(t *testing.T) {
 	wait := make(chan struct{})
 	go func() {
 		defer close(wait)
-		<-ch
+		msg := <-ch
+		tmsg := msg.Data.(*testpb.TestMessage)
+		if tmsg.Foo != "bar" {
+			t.Errorf("Expected test message Foo: \"bar\". Got: %v", tmsg)
+		}
 	}()
 
-	if err := simulateIncomingMessage(t, s, topic, []byte{}); err != nil {
+	b, _ := proto.Marshal(&testMessage)
+	_ = b
+
+	if err := simulateIncomingMessage(t, s, topic, b); err != nil {
 		t.Errorf("Failed to send to topic %s", topic)
 	}
 
@@ -229,7 +234,11 @@ func TestRegisterTopic_WithAdapers(t *testing.T) {
 	wait := make(chan struct{})
 	go func() {
 		defer close(wait)
-		<-ch
+		msg := <-ch
+		tmsg := msg.Data.(*testpb.TestMessage)
+		if tmsg.Foo != "bar" {
+			t.Errorf("Expected test message Foo: \"bar\". Got: %v", tmsg)
+		}
 	}()
 
 	if err := simulateIncomingMessage(t, s, topic, []byte{}); err != nil {
@@ -248,7 +257,8 @@ func TestRegisterTopic_WithAdapers(t *testing.T) {
 }
 
 func simulateIncomingMessage(t *testing.T, s *Server, topic string, b []byte) error {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	h := bhost.NewBlankHost(swarmt.GenSwarm(t, ctx))
 
 	gsub, err := floodsub.NewFloodSub(ctx, h)
