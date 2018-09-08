@@ -125,7 +125,7 @@ go_repository(
 
 go_repository(
     name = "com_github_libp2p_go_floodsub",
-    commit = "1b4fbb865d4944a602b27e24e8123a57095e9987",
+    commit = "7e9278f74d0a4173ec710c3888639733654b2182",
     importpath = "github.com/libp2p/go-floodsub",
 )
 
@@ -365,7 +365,7 @@ go_repository(
 
 go_repository(
     name = "com_github_libp2p_go_testutil",
-    commit = "f967bbd5fcb7fb6337504e5d78c53c865e80733c",
+    commit = "6a314c5399674bf271a762a206902fc6ff8c2f48",
     importpath = "github.com/libp2p/go-testutil",
 )
 
@@ -515,7 +515,7 @@ go_repository(
 
 go_repository(
     name = "com_github_libp2p_go_reuseport_transport",
-    commit = "3165117d78404111af975e3e9af2b54dd46f0819",
+    commit = "90b3b0a82752ab21f0c7fc2921335eabb64077c5",
     importpath = "github.com/libp2p/go-reuseport-transport",
 )
 
@@ -569,6 +569,6 @@ go_repository(
 
 go_repository(
     name = "com_github_libp2p_go_libp2p_blankhost",
-    commit = "073f507db72de824e981aa0f15f158175a8d6be1",
+    commit = "e357ea99ef895970804d23c28e7e2bb1dfeb966c",
     importpath = "github.com/libp2p/go-libp2p-blankhost",
 )

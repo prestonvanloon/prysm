@@ -2,31 +2,30 @@ package p2p
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"reflect"
 	"strings"
 	"sync"
 	"testing"
 	"time"
-	"fmt"
 
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/golang/protobuf/proto"
+	ipfslog "github.com/ipfs/go-log"
 	floodsub "github.com/libp2p/go-floodsub"
 	floodsubPb "github.com/libp2p/go-floodsub/pb"
-	bhost "github.com/libp2p/go-libp2p/p2p/host/basic"
-	swarmt "github.com/libp2p/go-libp2p-swarm/testing"
+	libp2p "github.com/libp2p/go-libp2p"
+	ma "github.com/multiformats/go-multiaddr"
 	shardpb "github.com/prysmaticlabs/prysm/proto/sharding/p2p/v1"
 	testpb "github.com/prysmaticlabs/prysm/proto/testing"
 	"github.com/prysmaticlabs/prysm/shared"
 	"github.com/sirupsen/logrus"
 	logTest "github.com/sirupsen/logrus/hooks/test"
-	ipfslog "github.com/ipfs/go-log"
 )
 
 // Ensure that server implements service.
 var _ = shared.Service(&Server{})
-
 
 func init() {
 	logrus.SetLevel(logrus.DebugLevel)
@@ -35,10 +34,7 @@ func init() {
 }
 
 func TestBroadcast(t *testing.T) {
-	s, err := NewServer()
-	if err != nil {
-		t.Fatalf("Could not start a new server: %v", err)
-	}
+	s := newTestServer(t)
 
 	msg := &shardpb.CollationBodyRequest{}
 	s.Broadcast(msg)
@@ -47,7 +43,7 @@ func TestBroadcast(t *testing.T) {
 }
 
 func TestEmitFailsNonProtobuf(t *testing.T) {
-	s, _ := NewServer()
+	s := newTestServer(t)
 	hook := logTest.NewGlobal()
 	s.emit(nil /*feed*/, nil /*msg*/, reflect.TypeOf(""))
 	want := "Received message is not a protobuf message"
@@ -57,7 +53,7 @@ func TestEmitFailsNonProtobuf(t *testing.T) {
 }
 
 func TestEmitFailsUnmarshal(t *testing.T) {
-	s, _ := NewServer()
+	s := newTestServer(t)
 	hook := logTest.NewGlobal()
 	msg := &floodsub.Message{
 		&floodsubPb.Message{
@@ -75,21 +71,17 @@ func TestEmitFailsUnmarshal(t *testing.T) {
 func TestSubscribeToTopic(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 1*time.Second)
 	defer cancel()
-	h := bhost.New(swarmt.GenSwarm(t, ctx))
+	h, err := libp2p.New(ctx, newHostPortOpt(33337))
+	if err != nil {
+		t.Errorf("failed to create host: %v", err)
+	}
 
 	gsub, err := floodsub.NewFloodSub(ctx, h)
 	if err != nil {
 		t.Errorf("Failed to create floodsub: %v", err)
 	}
 
-	s := Server{
-		ctx:          ctx,
-		gsub:         gsub,
-		host:         h,
-		feeds:        make(map[reflect.Type]*event.Feed),
-		mutex:        &sync.Mutex{},
-		topicMapping: make(map[reflect.Type]string),
-	}
+	s := newTestServer(t)
 
 	feed := s.Feed(shardpb.CollationBodyRequest{})
 	ch := make(chan Message)
@@ -102,21 +94,17 @@ func TestSubscribeToTopic(t *testing.T) {
 func TestSubscribe(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 1*time.Second)
 	defer cancel()
-	h := bhost.New(swarmt.GenSwarm(t, ctx))
+	h, err := libp2p.New(ctx, newHostPortOpt(33337))
+	if err != nil {
+		t.Errorf("failed to create host: %v", err)
+	}
 
 	gsub, err := floodsub.NewFloodSub(ctx, h)
 	if err != nil {
 		t.Errorf("Failed to create floodsub: %v", err)
 	}
 
-	s := Server{
-		ctx:          ctx,
-		gsub:         gsub,
-		host:         h,
-		feeds:        make(map[reflect.Type]*event.Feed),
-		mutex:        &sync.Mutex{},
-		topicMapping: make(map[reflect.Type]string),
-	}
+	s := newTestServer(t)
 
 	ch := make(chan Message)
 	sub := s.Subscribe(shardpb.CollationBodyRequest{}, ch)
@@ -125,7 +113,7 @@ func TestSubscribe(t *testing.T) {
 	testSubscribe(ctx, t, s, gsub, ch)
 }
 
-func testSubscribe(ctx context.Context, t *testing.T, s Server, gsub *floodsub.PubSub, ch chan Message) {
+func testSubscribe(ctx context.Context, t *testing.T, s *Server, gsub *floodsub.PubSub, ch chan Message) {
 	topic := shardpb.Topic_COLLATION_BODY_REQUEST
 
 	go s.RegisterTopic(topic.String(), shardpb.CollationBodyRequest{})
@@ -248,7 +236,7 @@ func TestRegisterTopic_WithAdapters(t *testing.T) {
 			t.Errorf("Received unexpected message: %v", msg)
 		}
 	}()
-	
+
 	b, err := proto.Marshal(testMessage)
 	if err != nil {
 		t.Fatalf("Failed to marshal test message %v", err)
@@ -269,11 +257,45 @@ func TestRegisterTopic_WithAdapters(t *testing.T) {
 	}
 }
 
+func newTestServer(t *testing.T) *Server {
+	ctx, cancel := context.WithCancel(context.Background())
+	host, err := libp2p.New(ctx, newHostPortOpt(33333))
+	if err != nil {
+		t.Errorf("Failed to create host: %v", err)
+	}
+	gsub, err := floodsub.NewGossipSub(ctx, host)
+	if err != nil {
+		t.Errorf("Failed to create gossipsub: %v", err)
+	}
+
+	return &Server{
+		ctx:          ctx,
+		cancel:       cancel,
+		feeds:        make(map[reflect.Type]*event.Feed),
+		host:         host,
+		gsub:         gsub,
+		mutex:        &sync.Mutex{},
+		topicMapping: make(map[reflect.Type]string),
+	}
+}
+
+func newHostPortOpt(port int) libp2p.Option {
+	listen, err := ma.NewMultiaddr(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", port))
+	if err != nil {
+		log.Errorf("Failed to p2p listen: %v", err)
+	}
+
+	return libp2p.ListenAddrs(listen)
+}
+
 func simulateIncomingMessage(t *testing.T, s *Server, topic string, b *[]byte) error {
 	ctx := context.Background()
-	h := bhost.New(swarmt.GenSwarm(t, ctx))
+	h, err := libp2p.New(ctx, newHostPortOpt(33335))
+	if err != nil {
+		t.Errorf("Failed to create host: %v", err)
+	}
 
-	gsub, err := floodsub.NewFloodSub(ctx, h)
+	gsub, err := floodsub.NewGossipSub(ctx, h)
 	if err != nil {
 		return err
 	}
@@ -283,16 +305,10 @@ func simulateIncomingMessage(t *testing.T, s *Server, topic string, b *[]byte) e
 		return err
 	}
 
+	gsub.Subscribe(topic)
+
 	// Short timeout to allow libp2p to handle peer connection.
 	time.Sleep(time.Millisecond * 100)
 
-//	return gsub.Publish(topic, *b)
-//	fmt.Println("publishing")
-//	fmt.Println(pinfo)
-//	fmt.Println(s.host.Peerstore().Peers())
-//	fmt.Println(topic)
-	fmt.Println(s.gsub.ListPeers(topic))
-	fmt.Println(gsub.ListPeers(topic))
-	fmt.Println(s.host.ID())
 	return gsub.Publish(topic, *b)
 }
