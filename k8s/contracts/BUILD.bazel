@@ -1,0 +1,11 @@
+load("@k8s_job//:defaults.bzl", "k8s_job")
+
+
+_jobs = [
+    "deploy_vrc",
+]
+
+[k8s_job(
+    name = name + ".job",
+    template = name + ".job.yaml",
+) for name in _jobs]

@@ -11,7 +11,7 @@ k8s_objects(
 )
 
 _deployments = [
-    "proposer",
+    "validator",
 ]
 
 k8s_objects(

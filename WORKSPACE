@@ -25,7 +25,7 @@ docker_repositories()
 # This requires rules_docker to be fully instantiated before it is pulled in.
 git_repository(
     name = "io_bazel_rules_k8s",
-    commit = "2054f7bf4d51f9e439313c56d7a208960a8a179f",  # 2018-07-29
+    commit = "c861e4ea5a0b34e17fb682f60fa78a9c85050519",  # 2018-08-23
     remote = "https://github.com/bazelbuild/rules_k8s.git",
 )
 
@@ -45,10 +45,11 @@ _NAMESPACE = "default"
     namespace = _NAMESPACE,
 ) for kind in [
     "deploy",
-    "service",
-    "secret",
-    "priority_class",
+    "job",
     "pod",
+    "priority_class",
+    "secret",
+    "service",
 ]]
 
 load("@io_bazel_rules_go//go:def.bzl", "go_rules_dependencies", "go_register_toolchains")
