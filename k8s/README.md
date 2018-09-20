@@ -57,6 +57,7 @@ cat /tmp/genesis.json | json-minify | base64
 First, launch the bootnode so that geth nodes can discover each other.
 
 ```bash
+bazel run //k8s/geth:bootnode.secret.apply 
 bazel run //k8s/geth:bootnode.deploy.apply
 ```
 

@@ -19,7 +19,8 @@ spec:
         - name: sharding-validator
           image: gcr.io/prysmaticlabs/prysm/validator:latest
           args: 
-            - "--beacon-rpc-provider=$(BEACON_CHAIN_SERVICE_HOST):$(BEACON_CHAIN_SERVICE_PORT_GRPC)"
+            - "--beacon-rpc-provider=http://$(BEACON_CHAIN_SERVICE_HOST):$(BEACON_CHAIN_SERVICE_PORT_GRPC)"
+            - "--verbosity=debug"
           resources:
             requests:
               memory: "100Mi"
