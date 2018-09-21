@@ -90,7 +90,7 @@ func (s *Service) Stop() error {
 // CurrentBeaconSlot based on the seconds since genesis.
 func (s *Service) CurrentBeaconSlot() uint64 {
 	secondsSinceGenesis := time.Since(s.genesisTimestamp).Seconds()
-	return uint64(math.Floor(secondsSinceGenesis / 8.0))
+	return uint64(math.Floor(secondsSinceGenesis / params.DefaultConfig().SlotDuration))
 }
 
 // fetchGenesisAndCanonicalState fetches both the genesis timestamp as well
