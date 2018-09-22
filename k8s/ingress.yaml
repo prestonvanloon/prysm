@@ -1,0 +1,23 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+  namespace: default
+  annotations:
+    nginx.org/websocket-services: "geth-ethstats"
+spec:
+  rules:
+  - host: ethstats.aquamarine.prylabs.network
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: geth-ethstats
+          servicePort: 3000
+  - host: powexplorer.aquamarine.prylabs.network
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: blockscout
+          servicePort: 4000

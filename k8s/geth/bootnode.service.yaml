@@ -23,3 +23,4 @@ spec:
       targetPort: 30301
       name: bootnode-udp
       protocol: UDP
+  type: NodePort
