@@ -21,3 +21,17 @@ spec:
         backend:
           serviceName: blockscout
           servicePort: 4000
+  - host: powfaucet.aquamarine.prylabs.network
+    http: 
+      paths: 
+      - path: /
+        backend:
+          serviceName: geth-faucet
+          servicePort: 8080
+  - host: powchain.aquamarine.prylabs.network
+    http:
+      paths: 
+        - paths:
+          backend:
+            serviceName: geth-nodes
+            servicePort: 8545
