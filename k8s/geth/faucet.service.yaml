@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: geth-faucet
+spec:
+  selector:
+    component: faucet
+    universe: geth
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: NodePort
