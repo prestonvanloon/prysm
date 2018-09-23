@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package ethereum.validatorpubkeymanager.v1;
+
+import "proto/beacon/rpc/v1/services.proto";
+
+service PubkeyManager {
+  rpc GetPubkey(GetPubkeyRequest) returns (ethereum.beacon.rpc.v1.PublicKey);
+}
+
+message GetPubkeyRequest {
+  string pod_name = 1;
+}

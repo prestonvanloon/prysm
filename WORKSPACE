@@ -593,3 +593,99 @@ go_repository(
     commit = "1d60e4601c6fd243af51cc01ddf169918a5407ca",
     importpath = "golang.org/x/sync",
 )
+
+go_repository(
+    name = "io_k8s_client_go",
+    commit = "7d04d0e2a0a1a4d4a1cd6baa432a2301492e4e65",  # version 8.0.0
+    importpath = "k8s.io/client-go",
+)
+
+go_repository(
+    name = "io_k8s_apimachinery",
+    commit = "99c5fa21f87204c2875a7f7ba977895d79b35c44",
+    importpath = "k8s.io/apimachinery",
+)
+
+go_repository(
+    name = "io_k8s_api",
+    commit = "f456898a08e4bbc5891694118f3819f324de12ff",
+    importpath = "k8s.io/api",
+)
+
+go_repository(
+    name = "com_github_googleapis_gnostic",
+    commit = "48a0ecefe2e4190c7a2d63b477875854a2f993b3",
+    importpath = "github.com/googleapis/gnostic",
+)
+
+go_repository(
+    name = "com_github_gregjones_httpcache",
+    commit = "9cad4c3443a7200dd6400aef47183728de563a38",
+    importpath = "github.com/gregjones/httpcache",
+)
+
+go_repository(
+    name = "com_github_peterbourgon_diskv",
+    commit = "0646ccaebea1ed1539efcab30cae44019090093f",
+    importpath = "github.com/peterbourgon/diskv",
+)
+
+go_repository(
+    name = "org_golang_x_time",
+    commit = "fbb02b2291d28baffd63558aa44b4b56f178d650",
+    importpath = "golang.org/x/time",
+)
+
+go_repository(
+    name = "com_github_google_gofuzz",
+    commit = "24818f796faf91cd76ec7bddd72458fbced7a6c1",
+    importpath = "github.com/google/gofuzz",
+)
+
+go_repository(
+    name = "com_github_grpc_ecosystem_go_grpc_prometheus",
+    commit = "93bf4626fba73b751b0f3cdf2649be4ce0c420cd",
+    importpath = "github.com/grpc-ecosystem/go-grpc-prometheus",
+)
+
+go_repository(
+    name = "com_github_prometheus_client_golang",
+    commit = "73edb9af667d9467d99b2001722770062a0086c3",
+    importpath = "github.com/prometheus/client_golang",
+)
+
+go_repository(
+    name = "com_github_beorn7_perks",
+    commit = "3a771d992973f24aa725d07868b467d1ddfceafb",
+    importpath = "github.com/beorn7/perks",
+)
+
+go_repository(
+    name = "com_github_prometheus_procfs",
+    commit = "418d78d0b9a7b7de3a6bbc8a23def624cc977bb2",
+    importpath = "github.com/prometheus/procfs",
+)
+
+go_repository(
+    name = "com_github_prometheus_client_model",
+    commit = "5c3871d89910bfb32f5fcab2aa4b9ec68e65a99f",
+    importpath = "github.com/prometheus/client_model",
+)
+
+go_repository(
+    name = "com_github_prometheus_common",
+    commit = "c7de2306084e37d54b8be01f3541a8464345e9a5",
+    importpath = "github.com/prometheus/common",
+)
+
+go_repository(
+    name = "com_github_matttproud_golang_protobuf_extensions",
+    commit = "c12348ce28de40eed0136aa2b644d0ee0650e56c",
+    importpath = "github.com/matttproud/golang_protobuf_extensions",
+)
+
+go_repository(
+    name = "com_github_grpc_ecosystem_go_grpc_middleware",
+    commit = "498ae206fc3cfe81cd82e48c1d4354026fa5f9ec",
+    importpath = "github.com/grpc-ecosystem/go-grpc-middleware",
+)
