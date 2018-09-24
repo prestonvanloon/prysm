@@ -7,28 +7,28 @@ metadata:
     nginx.org/websocket-services: "geth-ethstats"
 spec:
   rules:
-  - host: ethstats.aquamarine.prylabs.network
+  - host: ethstats.test.prylabs.network
     http:
       paths:
       - path: /
         backend:
           serviceName: geth-ethstats
           servicePort: 3000
-  - host: powexplorer.aquamarine.prylabs.network
+  - host: powexplorer.test.prylabs.network
     http:
       paths:
       - path: /
         backend:
           serviceName: blockscout
           servicePort: 4000
-  - host: powfaucet.aquamarine.prylabs.network
+  - host: powfaucet.test.prylabs.network
     http: 
       paths: 
       - path: /
         backend:
           serviceName: geth-faucet
           servicePort: 8080
-  - host: powchain.aquamarine.prylabs.network
+  - host: powchain.test.prylabs.network
     http:
       paths: 
         - paths:

@@ -45,10 +45,11 @@ _NAMESPACE = "default"
     namespace = _NAMESPACE,
 ) for kind in [
     "deploy",
-    "service",
-    "secret",
-    "priority_class",
+    "job",
     "pod",
+    "priority_class",
+    "secret",
+    "service",
 ]]
 
 load("@io_bazel_rules_go//go:def.bzl", "go_rules_dependencies", "go_register_toolchains")

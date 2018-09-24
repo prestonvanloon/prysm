@@ -21,8 +21,11 @@ import (
 )
 
 var (
-	port        = flag.Int("port", 10000, "The server port")
-	metricsPort = flag.Int("metrics-port", 10001, "Prometheus metrics port")
+	port         = flag.Int("port", 10000, "The server port")
+	metricsPort  = flag.Int("metrics-port", 10001, "Prometheus metrics port")
+	contractAddr = flag.String("contract", "", "The validator registration contract address")
+	privKey      = flag.String("privKey", "", "The private key used to deposit ETH on behalf of validators")
+	powAddr      = flag.String("powAddr", "", "The address of the running proof of work chain node")
 )
 
 func init() {
@@ -43,7 +46,7 @@ func main() {
 			grpc_recovery.UnaryServerInterceptor(),
 		)))
 
-	pb.RegisterPubkeyManagerServer(grpcServer, newServer())
+	pb.RegisterPubkeyManagerServer(grpcServer, newServer(*powAddr, *contractAddr, *privKey))
 
 	grpc_prometheus.Register(grpcServer)
 	http.Handle("/metrics", prometheus.Handler())

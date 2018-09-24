@@ -23,7 +23,7 @@ spec:
       targetPort: 30301
       name: bootnode-udp
       protocol: UDP
-  type: NodePort
+  type: ClusterIP
 ---
 kind: Service
 apiVersion: v1
@@ -50,4 +50,4 @@ spec:
       targetPort: 30301
       name: bootnode-udp
       protocol: UDP
-  type: NodePort
+  type: ClusterIP

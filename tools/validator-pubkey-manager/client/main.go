@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"log"
+	"os"
 	"time"
 
 	"google.golang.org/grpc"
@@ -40,6 +41,14 @@ func main() {
 	log.Printf("Received resp %v", res)
 
 	if *out != "" {
-
+		f, err := os.Create(*out)
+		if err != nil {
+			log.Fatalf("Failed to open file for write %v", err)
+		}
+		defer f.Close()
+		_, err = f.Write(res.PublicKey)
+		if err != nil {
+			log.Fatalf("Failed to write public key %v", err)
+		}
 	}
 }

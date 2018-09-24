@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -39,14 +41,17 @@ func (p *powchainclient) Deposit(ctx context.Context, pubkey []byte) error {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "deposit_validator")
 	defer span.Finish()
 
-	client, err := p.dialRpc(ctx)
+	fmt.Println("dialing RPC")
+	client, err := p.dialRPC(ctx)
 	if err != nil {
 		return err
 	}
+	fmt.Println("depositing transaction")
 	tx, err := p.sendDepositTransaction(ctx, client, pubkey)
 	if err != nil {
 		return err
 	}
+	fmt.Println("waiting for completion")
 	if err := p.waitForTransaction(ctx, client, tx); err != nil {
 		return err
 	}
@@ -54,7 +59,7 @@ func (p *powchainclient) Deposit(ctx context.Context, pubkey []byte) error {
 	return nil
 }
 
-func (p *powchainclient) dialRpc(ctx context.Context) (*ethclient.Client, error) {
+func (p *powchainclient) dialRPC(ctx context.Context) (*ethclient.Client, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "dial_rpc")
 	defer span.Finish()
 
@@ -77,12 +82,14 @@ func (p *powchainclient) sendDepositTransaction(ctx context.Context, client *eth
 
 	txOps := bind.NewKeyedTransactor(p.priv)
 	txOps.Value = new(big.Int).Div(big.NewInt(32), big.NewInt(int64(1e18)))
+	txOps.GasLimit = uint64(1000000)
 
 	var pkey [32]byte
 	copy(pkey[:], pubkey)
-	withdrawalShardID := new(big.Int)
-	withdrawalAddress := common.HexToAddress("0x0")
-	randaoCommitment := [32]byte{}
+	withdrawalShardID := big.NewInt(4)
+	withdrawalAddress := common.HexToAddress("0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+	randaoCommitment := pkey
+
 	tx, err := contract.Deposit(txOps, pkey, withdrawalShardID, withdrawalAddress, randaoCommitment)
 
 	if err != nil {
@@ -102,6 +109,15 @@ func (p *powchainclient) waitForTransaction(ctx context.Context, client *ethclie
 			return err
 		}
 		time.Sleep(1 * time.Second)
+	}
+
+	r, err := client.TransactionReceipt(ctx, tx.Hash())
+	if err != nil {
+		return err
+	}
+
+	if r.Status != types.ReceiptStatusSuccessful {
+		return errors.New("Transaction failed")
 	}
 
 	return nil

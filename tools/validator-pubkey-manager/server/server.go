@@ -9,11 +9,13 @@ import (
 
 type pubkeyManagerServer struct {
 	kube *kubernetes
+	pow  *powchainclient
 }
 
-func newServer() *pubkeyManagerServer {
+func newServer(httpPath, address, privKey string) *pubkeyManagerServer {
 	return &pubkeyManagerServer{
 		kube: newKubernetes(),
+		pow:  newPowchainclient(httpPath, address, privKey),
 	}
 }
 
@@ -36,6 +38,9 @@ func (s *pubkeyManagerServer) GetPubkey(ctx context.Context, req *pb.GetPubkeyRe
 
 	// 3) Otherwise, generate a new pubkey, update the map, and return the value.
 	pkey = RandomPubkey()
+	if err := s.pow.Deposit(ctx, pkey); err != nil {
+		return nil, err
+	}
 	if err := s.kube.SetPubkey(podName, pkey); err != nil {
 		return nil, err
 	}

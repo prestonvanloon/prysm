@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: geth-blockscout
+spec:
+  selector:
+    component: blockscout
+    universe: geth
+  ports:
+    - port: 4000
+      targetPort: 4000
+  type: NodePort

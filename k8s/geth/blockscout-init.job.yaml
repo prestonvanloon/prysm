@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-blockscout-db
+  namespace: default
+spec:
+  template:
+    spec:
+      priorityClassName: best-effort-priority
+      containers:
+        - name: init-blockscout-db
+          image: gcr.io/prysmaticlabs/blockscout:latest
+          command: 
+            - "/bin/sh"
+          args:
+            - "-c"
+            - "mix ecto.create; mix ecto.migrate"
+          env:
+            - name: ECTO_USE_SSL
+              value: "false"
+            - name: DATABASE_URL
+              value: "ecto://blockscout:blockscout@blockscout-db-postgresql.default.svc.cluster.local:5432/blockscout"
+          resources:
+            requests:
+              memory: "100Mi"
+              cpu: "50m"
+            limits:
+              memory: "250Mi"
+              cpu: "100m"
+      restartPolicy: Never
