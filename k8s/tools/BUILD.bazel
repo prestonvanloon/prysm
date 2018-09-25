@@ -1,7 +1,7 @@
 package(default_visibility = ["//k8s:__subpackages__"])
 
 load("@k8s_pod//:defaults.bzl", "k8s_pod")
-load("@k8s_pod//:defaults.bzl", "k8s_job")
+load("@k8s_job//:defaults.bzl", "k8s_job")
 
 k8s_pod(
     name = "busybox.pod",
@@ -10,5 +10,5 @@ k8s_pod(
 
 k8s_job(
     name = "deploy-validator-registration-contract.job",
-    template = "deploy-validator-registration-contrac.job.yaml",
+    template = "deploy-validator-registration-contract.job.yaml",
 )

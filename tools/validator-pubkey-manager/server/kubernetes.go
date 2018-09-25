@@ -4,7 +4,7 @@ type kubernetes struct {
 	// clientset *kubernetes.ClientSet
 }
 
-func newKubernetes() *kubernetes {
+func newKubernetesStorage() *kubernetes {
 	return &kubernetes{}
 }
 

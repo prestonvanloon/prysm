@@ -18,6 +18,10 @@ import (
 	vrc "github.com/prysmaticlabs/prysm/contracts/validator-registration-contract"
 )
 
+var (
+	amount32Eth, _ = new(big.Int).SetString("32000000000000000000", 10)
+)
+
 type powchainclient struct {
 	httpPath        string
 	priv            *ecdsa.PrivateKey
@@ -71,32 +75,26 @@ func (p *powchainclient) dialRPC(ctx context.Context) (*ethclient.Client, error)
 	return ethclient.NewClient(rpcClient), nil
 }
 
-func (p *powchainclient) sendDepositTransaction(ctx context.Context, client *ethclient.Client, pubkey []byte) (*types.Transaction, error) {
+func (p *powchainclient) sendDepositTransaction(ctx context.Context, backend bind.ContractBackend, pubkey []byte) (*types.Transaction, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "send_deposit_transaction")
 	defer span.Finish()
 
-	contract, err := vrc.NewValidatorRegistration(p.contractAddress, client)
+	contract, err := vrc.NewValidatorRegistration(p.contractAddress, backend)
 	if err != nil {
 		return nil, err
 	}
 
 	txOps := bind.NewKeyedTransactor(p.priv)
-	txOps.Value = new(big.Int).Div(big.NewInt(32), big.NewInt(int64(1e18)))
-	txOps.GasLimit = uint64(1000000)
+	txOps.Value = amount32Eth
 
 	var pkey [32]byte
 	copy(pkey[:], pubkey)
-	withdrawalShardID := big.NewInt(4)
-	withdrawalAddress := common.HexToAddress("0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
-	randaoCommitment := pkey
+	withdrawalShardID := big.NewInt(99)
+	withdrawalAddress := common.Address{'A', 'D', 'D', 'R', 'E', 'S', 'S'}
+	randaoCommitment := [32]byte{'S', 'H', 'H', 'H', 'H', 'I', 'T', 'S', 'A', 'S', 'E', 'C', 'R', 'E', 'T'}
 
-	tx, err := contract.Deposit(txOps, pkey, withdrawalShardID, withdrawalAddress, randaoCommitment)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return tx, nil
+	fmt.Errorf("pkey: %x", pkey)
+	return contract.Deposit(txOps, pkey, withdrawalShardID, withdrawalAddress, randaoCommitment)
 }
 
 func (p *powchainclient) waitForTransaction(ctx context.Context, client *ethclient.Client, tx *types.Transaction) error {

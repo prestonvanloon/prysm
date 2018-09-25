@@ -8,20 +8,20 @@ import (
 )
 
 type pubkeyManagerServer struct {
-	kube *kubernetes
-	pow  *powchainclient
+	storage storage
+	pow     *powchainclient
 }
 
 func newServer(httpPath, address, privKey string) *pubkeyManagerServer {
 	return &pubkeyManagerServer{
-		kube: newKubernetes(),
-		pow:  newPowchainclient(httpPath, address, privKey),
+		storage: newKubernetesStorage(),
+		pow:     newPowchainclient(httpPath, address, privKey),
 	}
 }
 
 func (s *pubkeyManagerServer) GetPubkey(ctx context.Context, req *pb.GetPubkeyRequest) (*beaconpb.PublicKey, error) {
 	// 1) Fetch the config map
-	cm, err := s.kube.GetConfigMap()
+	cm, err := s.storage.GetConfigMap()
 	if err != nil {
 		return nil, err // TODO: fail better
 	}
@@ -41,7 +41,7 @@ func (s *pubkeyManagerServer) GetPubkey(ctx context.Context, req *pb.GetPubkeyRe
 	if err := s.pow.Deposit(ctx, pkey); err != nil {
 		return nil, err
 	}
-	if err := s.kube.SetPubkey(podName, pkey); err != nil {
+	if err := s.storage.SetPubkey(podName, pkey); err != nil {
 		return nil, err
 	}
 	return &beaconpb.PublicKey{PublicKey: pkey}, nil
