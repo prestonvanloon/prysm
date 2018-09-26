@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"crypto/ecdsa"
-	"errors"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
@@ -89,11 +89,19 @@ func (p *powchainclient) sendDepositTransaction(ctx context.Context, backend bin
 
 	var pkey [32]byte
 	copy(pkey[:], pubkey)
+
+	t, err := contract.UsedPubkey(&bind.CallOpts{}, pkey)
+	if err != nil {
+		return nil, err
+	}
+	if t {
+		return nil, fmt.Errorf("pubkey %x is already deposited", pubkey)
+	}
+
 	withdrawalShardID := big.NewInt(99)
 	withdrawalAddress := common.Address{'A', 'D', 'D', 'R', 'E', 'S', 'S'}
 	randaoCommitment := [32]byte{'S', 'H', 'H', 'H', 'H', 'I', 'T', 'S', 'A', 'S', 'E', 'C', 'R', 'E', 'T'}
 
-	fmt.Errorf("pkey: %x", pkey)
 	return contract.Deposit(txOps, pkey, withdrawalShardID, withdrawalAddress, randaoCommitment)
 }
 
@@ -115,7 +123,9 @@ func (p *powchainclient) waitForTransaction(ctx context.Context, client *ethclie
 	}
 
 	if r.Status != types.ReceiptStatusSuccessful {
-		return errors.New("Transaction failed")
+		rJSON, _ := json.Marshal(r)
+		tJSON, _ := tx.MarshalJSON()
+		return fmt.Errorf("Transaction failed. Transaction: %s Receipt: %s", tJSON, rJSON)
 	}
 
 	return nil

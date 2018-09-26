@@ -21,9 +21,9 @@ func newServer(httpPath, address, privKey string) *pubkeyManagerServer {
 
 func (s *pubkeyManagerServer) GetPubkey(ctx context.Context, req *pb.GetPubkeyRequest) (*beaconpb.PublicKey, error) {
 	// 1) Fetch the config map
-	cm, err := s.storage.GetConfigMap()
+	cm, err := s.storage.PubkeyMap()
 	if err != nil {
-		return nil, err // TODO: fail better
+		return nil, err
 	}
 
 	podName := req.PodName
@@ -37,6 +37,7 @@ func (s *pubkeyManagerServer) GetPubkey(ctx context.Context, req *pb.GetPubkeyRe
 	}
 
 	// 3) Otherwise, generate a new pubkey, update the map, and return the value.
+	// Note: this could return a unallocated pubkey from the genesis set, in desired in the future.
 	pkey = RandomPubkey()
 	if err := s.pow.Deposit(ctx, pkey); err != nil {
 		return nil, err

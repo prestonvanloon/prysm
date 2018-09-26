@@ -1,5 +1,11 @@
 package main
 
+import "crypto/rand"
+
+// RandomPubkey Generates a random pubkey
 func RandomPubkey() []byte {
-	return []byte("11")
+	pkey := make([]byte, 32)
+	rand.Read(pkey)
+
+	return pkey
 }

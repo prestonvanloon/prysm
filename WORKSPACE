@@ -597,25 +597,35 @@ go_repository(
 
 go_repository(
     name = "io_k8s_client_go",
-    commit = "7d04d0e2a0a1a4d4a1cd6baa432a2301492e4e65",  # version 8.0.0
+    build_file_proto_mode = "disable_global",
+    commit = "a5d40177db184c504978c4b08350ac9e367042b0",
     importpath = "k8s.io/client-go",
 )
 
 go_repository(
     name = "io_k8s_apimachinery",
-    commit = "99c5fa21f87204c2875a7f7ba977895d79b35c44",
+    build_file_proto_mode = "disable_global",
+    commit = "5ae511e0ed34ac0fbf6e17340df5605372591d00",
     importpath = "k8s.io/apimachinery",
 )
 
 go_repository(
+    name = "com_github_google_gofuzz",
+    commit = "24818f796faf91cd76ec7bddd72458fbced7a6c1",
+    importpath = "github.com/google/gofuzz",
+)
+
+go_repository(
     name = "io_k8s_api",
-    commit = "f456898a08e4bbc5891694118f3819f324de12ff",
+    build_file_proto_mode = "disable_global",
+    commit = "a191abe0b71e00ce4cde58af8002aa4c1a8bb068",
     importpath = "k8s.io/api",
 )
 
 go_repository(
     name = "com_github_googleapis_gnostic",
     commit = "48a0ecefe2e4190c7a2d63b477875854a2f993b3",
+    build_file_proto_mode = "disable_global",
     importpath = "github.com/googleapis/gnostic",
 )
 
@@ -689,4 +699,16 @@ go_repository(
     name = "com_github_grpc_ecosystem_go_grpc_middleware",
     commit = "498ae206fc3cfe81cd82e48c1d4354026fa5f9ec",
     importpath = "github.com/grpc-ecosystem/go-grpc-middleware",
+)
+
+go_repository(
+    name = "in_gopkg_yaml_v2",
+    commit = "5420a8b6744d3b0345ab293f6fcba19c978f1183",
+    importpath = "gopkg.in/yaml.v2",
+)
+
+go_repository(
+    name = "com_github_google_btree",
+    commit = "4030bb1f1f0c35b30ca7009e9ebd06849dd45306",
+    importpath = "github.com/google/btree",
 )
