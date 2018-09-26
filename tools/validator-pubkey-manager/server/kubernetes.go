@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 	"path/filepath"
 
+	"github.com/opentracing/opentracing-go"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8s "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -40,7 +42,10 @@ func newKubernetesStorage() *kubernetes {
 	}
 }
 
-func (k *kubernetes) PubkeyMap() (map[string][]byte, error) {
+func (k *kubernetes) PubkeyMap(ctx context.Context) (map[string][]byte, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "get_pubkey_map")
+	defer span.Finish()
+
 	cmap, err := k.clientset.CoreV1().ConfigMaps(namespace).Get(configMapName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -49,10 +54,16 @@ func (k *kubernetes) PubkeyMap() (map[string][]byte, error) {
 	return cmap.BinaryData, nil
 }
 
-func (k *kubernetes) SetPubkey(pod string, pkey []byte) error {
+func (k *kubernetes) SetPubkey(ctx context.Context, pod string, pkey []byte) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "set_pubkey_map")
+	defer span.Finish()
+
 	cmap, err := k.clientset.CoreV1().ConfigMaps(namespace).Get(configMapName, metav1.GetOptions{})
 	if err != nil {
 		return err
+	}
+	if cmap.BinaryData == nil {
+		cmap.BinaryData = make(map[string][]byte)
 	}
 
 	cmap.BinaryData[pod] = pkey
@@ -64,7 +75,10 @@ func (k *kubernetes) SetPubkey(pod string, pkey []byte) error {
 	return nil
 }
 
-func (k *kubernetes) RemovePod(pod string) error {
+func (k *kubernetes) RemovePod(ctx context.Context, pod string) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "update_pubkey_map")
+	defer span.Finish()
+
 	cmap, err := k.clientset.CoreV1().ConfigMaps(namespace).Get(configMapName, metav1.GetOptions{})
 	if err != nil {
 		return err

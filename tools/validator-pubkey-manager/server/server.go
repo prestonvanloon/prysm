@@ -21,7 +21,7 @@ func newServer(httpPath, address, privKey string) *pubkeyManagerServer {
 
 func (s *pubkeyManagerServer) GetPubkey(ctx context.Context, req *pb.GetPubkeyRequest) (*beaconpb.PublicKey, error) {
 	// 1) Fetch the config map
-	cm, err := s.storage.PubkeyMap()
+	cm, err := s.storage.PubkeyMap(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (s *pubkeyManagerServer) GetPubkey(ctx context.Context, req *pb.GetPubkeyRe
 	if err := s.pow.Deposit(ctx, pkey); err != nil {
 		return nil, err
 	}
-	if err := s.storage.SetPubkey(podName, pkey); err != nil {
+	if err := s.storage.SetPubkey(ctx, podName, pkey); err != nil {
 		return nil, err
 	}
 	return &beaconpb.PublicKey{PublicKey: pkey}, nil

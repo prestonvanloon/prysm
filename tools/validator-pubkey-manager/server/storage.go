@@ -1,7 +1,9 @@
 package main
 
+import "context"
+
 type storage interface {
-	PubkeyMap() (map[string][]byte, error)
-	SetPubkey(pod string, pkey []byte) error
-	RemovePod(pod string) error
+	PubkeyMap(ctx context.Context) (map[string][]byte, error)
+	SetPubkey(ctx context.Context, pod string, pkey []byte) error
+	RemovePod(ctx context.Context, pod string) error
 }

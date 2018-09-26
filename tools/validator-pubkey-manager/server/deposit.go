@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"crypto/ecdsa"
-	"encoding/json"
 	"fmt"
+	"log"
 	"math/big"
 	"time"
 
@@ -45,17 +45,14 @@ func (p *powchainclient) Deposit(ctx context.Context, pubkey []byte) error {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "deposit_validator")
 	defer span.Finish()
 
-	fmt.Println("dialing RPC")
 	client, err := p.dialRPC(ctx)
 	if err != nil {
 		return err
 	}
-	fmt.Println("depositing transaction")
 	tx, err := p.sendDepositTransaction(ctx, client, pubkey)
 	if err != nil {
 		return err
 	}
-	fmt.Println("waiting for completion")
 	if err := p.waitForTransaction(ctx, client, tx); err != nil {
 		return err
 	}
@@ -123,9 +120,11 @@ func (p *powchainclient) waitForTransaction(ctx context.Context, client *ethclie
 	}
 
 	if r.Status != types.ReceiptStatusSuccessful {
-		rJSON, _ := json.Marshal(r)
-		tJSON, _ := tx.MarshalJSON()
-		return fmt.Errorf("Transaction failed. Transaction: %s Receipt: %s", tJSON, rJSON)
+		// TODO: Increment some prometheus counter.
+		log.Printf("WARN: Receipt was unsuccessful for tx %s", tx.Hash().Hex())
+		// rJSON, _ := json.Marshal(r)
+		// tJSON, _ := tx.MarshalJSON()
+		// return fmt.Errorf("Transaction failed. Transaction: %s Receipt: %s", tJSON, rJSON)
 	}
 
 	return nil
