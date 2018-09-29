@@ -183,7 +183,7 @@ go_repository(
 
 go_repository(
     name = "com_github_libp2p_go_libp2p_circuit",
-    commit = "ee6dd9116af74cc17c03a199c258817543b0704b",
+    commit = "eca2b86a1bcf00adba4f71b3654c3898b19ef421",
     importpath = "github.com/libp2p/go-libp2p-circuit",
 )
 

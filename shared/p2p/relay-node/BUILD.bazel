@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/prysmaticlabs/prysm/shared/p2p/relay-node",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@com_github_ipfs_go_log//:go_default_library",
+        "@com_github_libp2p_go_conn_security//insecure:go_default_library",
+        "@com_github_libp2p_go_libp2p//:go_default_library",
+        "@com_github_libp2p_go_libp2p_circuit//:go_default_library",
+        "@com_github_libp2p_go_libp2p_transport_upgrader//:go_default_library",
+        "@com_github_multiformats_go_multiaddr//:go_default_library",
+        "@com_github_whyrusleeping_go_smux_multiplex//:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "relay-node",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

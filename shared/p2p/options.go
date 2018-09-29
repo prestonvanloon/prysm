@@ -1,6 +1,7 @@
 package p2p
 
 import (
+	cr "crypto/rand"
 	"fmt"
 	"math/rand"
 	"time"
@@ -20,7 +21,7 @@ var portRange int32 = 100
 // identity.
 func buildOptions() []libp2p.Option {
 	rand.Seed(int64(time.Now().Nanosecond()))
-	priv, _, err := crypto.GenerateKeyPair(crypto.Secp256k1, 512)
+	priv, _, err := crypto.GenerateEd25519Key(cr.Reader)
 	if err != nil {
 		log.Errorf("Failed to generate crypto key pair: %v", err)
 	}
