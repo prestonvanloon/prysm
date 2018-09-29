@@ -2,15 +2,12 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
 
 	logger "github.com/ipfs/go-log"
-	insecure "github.com/libp2p/go-conn-security/insecure"
 	libp2p "github.com/libp2p/go-libp2p"
-	relay "github.com/libp2p/go-libp2p-circuit"
-	tptu "github.com/libp2p/go-libp2p-transport-upgrader"
+	circuit "github.com/libp2p/go-libp2p-circuit"
 	ma "github.com/multiformats/go-multiaddr"
-	mplex "github.com/whyrusleeping/go-smux-multiplex"
 )
 
 func init() {
@@ -27,29 +24,15 @@ func main() {
 	}
 	opts := []libp2p.Option{
 		libp2p.ListenAddrs(listen),
+		libp2p.EnableRelay(circuit.OptHop),
 	}
 
 	host, err := libp2p.New(ctx, opts...)
 	if err != nil {
 		panic(err)
 	}
-	// wat is this ???
-	upgrader := &tptu.Upgrader{
-		Secure: insecure.New("whatever"),
-		Muxer:  new(mplex.Transport),
-	}
 
-	ropts := []relay.RelayOpt{}
-
-	node, err := relay.NewRelay(ctx, host, upgrader, ropts...)
-
-	if err != nil {
-		panic(err)
-	}
-
-	_ = node
-
-	log.Println("Listening on port 4000, i think")
+	fmt.Printf("/ip4/0.0.0.0/tcp/%v/p2p/%s\n", 4001, host.ID().Pretty())
 
 	// Blocking wait forever.
 	select {}
