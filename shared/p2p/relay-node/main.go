@@ -32,7 +32,9 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("/ip4/0.0.0.0/tcp/%v/p2p/%s\n", 4001, host.ID().Pretty())
+	fmt.Printf("Relay running: /ip4/0.0.0.0/tcp/%v/p2p/%s\n", 4001, host.ID().Pretty())
+
+	// TODO: Enable monitoring metrics
 
 	// Blocking wait forever.
 	select {}
