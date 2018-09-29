@@ -4,15 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	logger "github.com/ipfs/go-log"
+	ds "github.com/ipfs/go-datastore"
+	dsync "github.com/ipfs/go-datastore/sync"
 	libp2p "github.com/libp2p/go-libp2p"
-	circuit "github.com/libp2p/go-libp2p-circuit"
+	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 	ma "github.com/multiformats/go-multiaddr"
 )
-
-func init() {
-	logger.SetDebugLogging()
-}
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -24,7 +21,6 @@ func main() {
 	}
 	opts := []libp2p.Option{
 		libp2p.ListenAddrs(listen),
-		libp2p.EnableRelay(circuit.OptHop),
 	}
 
 	host, err := libp2p.New(ctx, opts...)
@@ -32,7 +28,16 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("Relay running: /ip4/0.0.0.0/tcp/%v/p2p/%s\n", 4001, host.ID().Pretty())
+	// Construct a datastore (needed by the DHT). This is just a simple, in-memory thread-safe datastore.
+	dstore := dsync.MutexWrap(ds.NewMapDatastore())
+
+	// Make the DHT
+	dht := kaddht.NewDHT(ctx, host, dstore)
+	if err := dht.Bootstrap(ctx); err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Bootstrap node running: /ip4/0.0.0.0/tcp/%v/p2p/%s\n", 4001, host.ID().Pretty())
 
 	// TODO: Enable monitoring metrics
 	// TODO: Log peer connections?
