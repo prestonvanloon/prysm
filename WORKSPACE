@@ -85,7 +85,7 @@ go_repository(
 
 go_repository(
     name = "com_github_ethereum_go_ethereum",
-    importpath = "github.com/ethereum/go-ethereum",
+    # Last updated September 09, 2018
     # Note: go-ethereum is not bazel-friendly with regards to cgo. We have a
     # a fork that has resolved these issues by disabling HID/USB support and
     # some manual fixes for c imports in the crypto package. This is forked
@@ -95,6 +95,7 @@ go_repository(
     vcs = "git",
     # Last updated September 09, 2018
     commit = "f4b3f83362a4cf2928e57914af040aea76c8a7d6",
+    importpath = "github.com/ethereum/go-ethereum",
 )
 
 go_repository(
@@ -123,13 +124,13 @@ go_repository(
 
 go_repository(
     name = "com_github_libp2p_go_floodsub",
-    commit = "1b4fbb865d4944a602b27e24e8123a57095e9987",
+    commit = "900095341be1eeba1a0d6c1e08ab61d1242c6cb4",
     importpath = "github.com/libp2p/go-floodsub",
 )
 
 go_repository(
     name = "com_github_libp2p_go_libp2p",
-    commit = "2787133b0469926b58dd819707cc4297a3ca7306",
+    commit = "57ed88e170d64b6fb98253654fd66e8634af0b11",
     importpath = "github.com/libp2p/go-libp2p",
 )
 
@@ -141,14 +142,14 @@ go_repository(
 
 go_repository(
     name = "com_github_libp2p_go_libp2p_crypto",
+    build_file_proto_mode = "disable_global",
     commit = "7240b40a3ddc47c4d17c15baabcbe45e5219171b",
     importpath = "github.com/libp2p/go-libp2p-crypto",
-    build_file_proto_mode = "disable_global",
 )
 
 go_repository(
     name = "com_github_multiformats_go_multiaddr",
-    commit = "a80cfc331ffff8bc519e401d8789d324196d1775",
+    commit = "fe1c46f8be5af4aff4db286e08839295bd922efb",
     importpath = "github.com/multiformats/go-multiaddr",
 )
 
@@ -226,7 +227,7 @@ go_repository(
 
 go_repository(
     name = "com_github_multiformats_go_multiaddr_net",
-    commit = "ceed2dc9f0152198ccf8745f5a17c81ff4ae6bd4",
+    commit = "1cb9a0e8a6de3c8a10f6cee60d01d793603c4f7e",
     importpath = "github.com/multiformats/go-multiaddr-net",
 )
 
@@ -256,7 +257,7 @@ go_repository(
 
 go_repository(
     name = "com_github_whyrusleeping_mdns",
-    commit = "348bb87e5cd39b33dba9a33cb20802111e5ee029",
+    commit = "ef14215e6b30606f4ce84174ed7a644a05cb1af3",
     importpath = "github.com/whyrusleeping/mdns",
 )
 
@@ -286,9 +287,9 @@ go_repository(
 
 go_repository(
     name = "com_github_libp2p_go_libp2p_secio",
+    build_file_proto_mode = "disable_global",
     commit = "7b61c65c05f627ae0d02c4e9f5c5815ef1486d68",
     importpath = "github.com/libp2p/go-libp2p-secio",
-    build_file_proto_mode = "disable_global",
 )
 
 go_repository(
@@ -413,7 +414,7 @@ go_repository(
 
 go_repository(
     name = "com_github_miekg_dns",
-    commit = "3e6e47bc11bc7f93f9e2f1c7bd6481ba4802808b",
+    commit = "ba6747e8a94115e9dc7738afb87850687611df1b",
     importpath = "github.com/miekg/dns",
 )
 
@@ -455,8 +456,8 @@ go_repository(
 
 go_repository(
     name = "com_github_sirupsen_logrus",
+    commit = "1ed61965b9e594bf37539680d7f63eccd060314f",
     importpath = "github.com/sirupsen/logrus",
-    commit = "e54a77765aca7bbdd8e56c1c54f60579968b2dc9",
 )
 
 go_repository(
@@ -503,7 +504,7 @@ go_repository(
 
 go_repository(
     name = "org_golang_x_crypto",
-    commit = "5295e8364332db77d75fce11f1d19c053919a9c9",
+    commit = "e3636079e1a4c1f337f212cc5cd2aca108f6c900",
     importpath = "golang.org/x/crypto",
 )
 
