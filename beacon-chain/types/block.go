@@ -138,16 +138,22 @@ func (b *Block) Timestamp() (time.Time, error) {
 }
 
 // isSlotValid compares the slot to the system clock to determine if the block is valid.
-func (b *Block) isSlotValid() bool {
+func (b *Block) isSlotValid(genesisTimestamp time.Time) bool {
 	slotDuration := time.Duration(b.SlotNumber()*params.GetConfig().SlotDuration) * time.Second
-	validTimeThreshold := params.GetConfig().GenesisTime.Add(slotDuration)
+	validTimeThreshold := genesisTimestamp.Add(slotDuration)
 	return clock.Now().After(validTimeThreshold)
 }
 
 // IsValid is called to decide if an incoming p2p block can be processed. It checks for following conditions:
 // 1.) Ensure local time is large enough to process this block's slot.
 // 2.) Verify that the parent block's proposer's attestation is included.
-func (b *Block) IsValid(chain chainSearchService, aState *ActiveState, cState *CrystallizedState, parentSlot uint64) bool {
+func (b *Block) IsValid(
+	chain chainSearchService,
+	aState *ActiveState,
+	cState *CrystallizedState,
+	parentSlot uint64,
+	enableAttestationValidity bool,
+	genesisTimestamp time.Time) bool {
 	_, err := b.Hash()
 	if err != nil {
 		log.Errorf("Could not hash incoming block: %v", err)
@@ -159,30 +165,34 @@ func (b *Block) IsValid(chain chainSearchService, aState *ActiveState, cState *C
 		return false
 	}
 
-	if !b.isSlotValid() {
+	if !b.isSlotValid(genesisTimestamp) {
 		log.Errorf("Slot of block is too high: %d", b.SlotNumber())
 		return false
 	}
 
-	// verify proposer from last slot is in the first attestation object in AggregatedAttestation.
-	_, proposerIndex, err := casper.ProposerShardAndIndex(
-		cState.ShardAndCommitteesForSlots(),
-		cState.LastStateRecalc(),
-		parentSlot)
-	if err != nil {
-		log.Errorf("Can not get proposer index %v", err)
-		return false
-	}
-	log.Infof("Proposer index: %v", proposerIndex)
-	if !shared.CheckBit(b.Attestations()[0].AttesterBitfield, int(proposerIndex)) {
-		log.Errorf("Can not locate proposer in the first attestation of AttestionRecord %v", err)
-		return false
-	}
-
-	for index, attestation := range b.Attestations() {
-		if !b.isAttestationValid(index, chain, aState, cState, parentSlot) {
-			log.Debugf("attestation invalid: %v", attestation)
+	if enableAttestationValidity {
+		// verify proposer from last slot is in the first attestation object in AggregatedAttestation.
+		_, proposerIndex, err := casper.ProposerShardAndIndex(
+			cState.ShardAndCommitteesForSlots(),
+			cState.LastStateRecalc(),
+			parentSlot)
+		if err != nil {
+			log.Errorf("Can not get proposer index %v", err)
 			return false
+		}
+		if !shared.CheckBit(b.Attestations()[0].AttesterBitfield, int(proposerIndex)) {
+			log.Errorf("Can not locate proposer in the first attestation of AttestionRecord %v", err)
+			return false
+		}
+
+		log.Debugf("Checking block validity. Recent block hash is %d",
+			aState.data.RecentBlockHashes[0],
+		)
+		for index, attestation := range b.Attestations() {
+			if !b.isAttestationValid(index, chain, aState, cState, parentSlot) {
+				log.Debugf("attestation invalid: %v", attestation)
+				return false
+			}
 		}
 	}
 

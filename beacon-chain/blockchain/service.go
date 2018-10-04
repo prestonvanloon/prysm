@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/event"
 	"github.com/prysmaticlabs/prysm/beacon-chain/params"
 	"github.com/prysmaticlabs/prysm/beacon-chain/powchain"
 	"github.com/prysmaticlabs/prysm/beacon-chain/types"
 	"github.com/prysmaticlabs/prysm/beacon-chain/utils"
+	"github.com/prysmaticlabs/prysm/shared/event"
 	"github.com/sirupsen/logrus"
 )
 
@@ -33,19 +33,26 @@ type ChainService struct {
 	canonicalCrystallizedStateFeed *event.Feed
 	blocksPendingProcessing        [][32]byte
 	lock                           sync.Mutex
-	devMode                        bool
 	genesisTimestamp               time.Time
 	slotAlignmentDuration          uint64
+	enableCrossLinks               bool
+	enableRewardChecking           bool
+	enableAttestationValidity      bool
+	enablePOWChain                 bool
 }
 
 // Config options for the service.
 type Config struct {
-	BeaconBlockBuf   int
-	IncomingBlockBuf int
-	Chain            *BeaconChain
-	Web3Service      *powchain.Web3Service
-	BeaconDB         ethdb.Database
-	DevMode          bool
+	BeaconBlockBuf            int
+	IncomingBlockBuf          int
+	Chain                     *BeaconChain
+	Web3Service               *powchain.Web3Service
+	BeaconDB                  ethdb.Database
+	DevMode                   bool
+	EnableCrossLinks          bool
+	EnableRewardChecking      bool
+	EnableAttestationValidity bool
+	EnablePOWChain            bool
 }
 
 // NewChainService instantiates a new service instance that will
@@ -54,7 +61,6 @@ func NewChainService(ctx context.Context, cfg *Config) (*ChainService, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	return &ChainService{
 		ctx:                            ctx,
-		genesisTimestamp:               params.GetConfig().GenesisTime,
 		chain:                          cfg.Chain,
 		cancel:                         cancel,
 		beaconDB:                       cfg.BeaconDB,
@@ -64,7 +70,10 @@ func NewChainService(ctx context.Context, cfg *Config) (*ChainService, error) {
 		canonicalBlockFeed:             new(event.Feed),
 		canonicalCrystallizedStateFeed: new(event.Feed),
 		blocksPendingProcessing:        [][32]byte{},
-		devMode:                        cfg.DevMode,
+		enablePOWChain:                 cfg.EnablePOWChain,
+		enableCrossLinks:               cfg.EnableCrossLinks,
+		enableRewardChecking:           cfg.EnableRewardChecking,
+		enableAttestationValidity:      cfg.EnableAttestationValidity,
 		slotAlignmentDuration:          params.GetConfig().SlotDuration,
 	}, nil
 }
@@ -74,6 +83,15 @@ func (c *ChainService) Start() {
 	// TODO(#474): Fetch the slot: (block, state) DAGs from persistent storage
 	// to truly continue across sessions.
 	log.Info("Starting service")
+
+	genesis, err := c.GenesisBlock()
+	if err != nil {
+		log.Fatalf("Could not get genesis block: %v", err)
+	}
+	c.genesisTimestamp, err = genesis.Timestamp()
+	if err != nil {
+		log.Fatalf("Could not get genesis timestamp: %v", err)
+	}
 
 	// If the genesis time was at 12:00:00PM and the current time is 12:00:03PM,
 	// the next slot should tick at 12:00:08PM. We can accomplish this
@@ -106,7 +124,10 @@ func (c *ChainService) Stop() error {
 // CurrentBeaconSlot based on the seconds since genesis.
 func (c *ChainService) CurrentBeaconSlot() uint64 {
 	secondsSinceGenesis := time.Since(c.genesisTimestamp).Seconds()
-	return uint64(math.Floor(secondsSinceGenesis / 8.0))
+	if secondsSinceGenesis-float64(params.GetConfig().SlotDuration) < 0 {
+		return 0
+	}
+	return uint64(math.Floor(secondsSinceGenesis/float64(params.GetConfig().SlotDuration))) - 1
 }
 
 // CanonicalHead of the current beacon chain.
@@ -190,6 +211,11 @@ func (c *ChainService) CanonicalBlockBySlotNumber(slotNumber uint64) (*types.Blo
 	return c.chain.canonicalBlockForSlot(slotNumber)
 }
 
+// GenesisBlock returns the contents of the genesis block.
+func (c *ChainService) GenesisBlock() (*types.Block, error) {
+	return c.chain.genesisBlock()
+}
+
 // doesPoWBlockExist checks if the referenced PoW block exists.
 func (c *ChainService) doesPoWBlockExist(block *types.Block) bool {
 	powBlock, err := c.web3Service.Client().BlockByHash(context.Background(), block.PowChainRef())
@@ -247,7 +273,12 @@ func (c *ChainService) updateHead(slotInterval <-chan time.Time) {
 			var stateTransitioned bool
 
 			for cState.IsCycleTransition(parentBlock.SlotNumber()) {
-				cState, aState, err = cState.NewStateRecalculations(aState, block)
+				cState, aState, err = cState.NewStateRecalculations(
+					aState,
+					block,
+					c.enableCrossLinks,
+					c.enableRewardChecking,
+				)
 				if err != nil {
 					log.Errorf("Initialize new cycle transition failed: %v", err)
 					continue
@@ -255,7 +286,12 @@ func (c *ChainService) updateHead(slotInterval <-chan time.Time) {
 				stateTransitioned = true
 			}
 
-			aState, err = aState.CalculateNewActiveState(block, cState, parentBlock.SlotNumber())
+			aState, err = aState.CalculateNewActiveState(
+				block,
+				cState,
+				parentBlock.SlotNumber(),
+				c.enableAttestationValidity,
+			)
 			if err != nil {
 				log.Errorf("Compute active state failed: %v", err)
 				continue
@@ -321,7 +357,7 @@ func (c *ChainService) blockProcessing() {
 				continue
 			}
 
-			if !c.devMode && !c.doesPoWBlockExist(block) {
+			if c.enablePOWChain && !c.doesPoWBlockExist(block) {
 				log.Debugf("Proof-of-Work chain reference in block does not exist")
 				continue
 			}
@@ -345,7 +381,14 @@ func (c *ChainService) blockProcessing() {
 			aState := c.chain.ActiveState()
 			cState := c.chain.CrystallizedState()
 
-			if valid := block.IsValid(c, aState, cState, parent.SlotNumber()); !valid {
+			if valid := block.IsValid(
+				c,
+				aState,
+				cState,
+				parent.SlotNumber(),
+				c.enableAttestationValidity,
+				c.genesisTimestamp,
+			); !valid {
 				log.Debugf("Block failed validity conditions: %v", err)
 				continue
 			}
@@ -355,14 +398,13 @@ func (c *ChainService) blockProcessing() {
 				continue
 			}
 
-			log.Infof("Finished processing received block: %x", blockHash)
+			log.Infof("Finished processing received block: 0x%x", blockHash)
 
 			// We push the hash of the block we just stored to a pending processing
 			// slice the fork choice rule will utilize.
 			c.lock.Lock()
 			c.blocksPendingProcessing = append(c.blocksPendingProcessing, blockHash)
 			c.lock.Unlock()
-			log.Info("Finished processing received block")
 		}
 	}
 }

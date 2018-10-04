@@ -10,14 +10,13 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/prysmaticlabs/prysm/beacon-chain/casper"
 	"github.com/prysmaticlabs/prysm/beacon-chain/params"
 	"github.com/prysmaticlabs/prysm/beacon-chain/types"
 	pbp2p "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"
 	pb "github.com/prysmaticlabs/prysm/proto/beacon/rpc/v1"
+	"github.com/prysmaticlabs/prysm/shared/event"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -46,6 +45,7 @@ type canonicalFetcher interface {
 type chainService interface {
 	IncomingBlockFeed() *event.Feed
 	CurrentCrystallizedState() *types.CrystallizedState
+	GenesisBlock() (*types.Block, error)
 }
 
 type attestationService interface {
@@ -72,7 +72,7 @@ type Service struct {
 	canonicalBlockChan    chan *types.Block
 	canonicalStateChan    chan *types.CrystallizedState
 	incomingAttestation   chan *types.Attestation
-	devMode               bool
+	enablePOWChain        bool
 	slotAlignmentDuration time.Duration
 }
 
@@ -86,7 +86,7 @@ type Config struct {
 	ChainService       chainService
 	POWChainService    powChainService
 	AttestationService attestationService
-	DevMode            bool
+	EnablePOWChain     bool
 }
 
 // NewRPCService creates a new instance of a struct implementing the BeaconServiceServer
@@ -107,7 +107,7 @@ func NewRPCService(ctx context.Context, cfg *Config) *Service {
 		canonicalBlockChan:    make(chan *types.Block, cfg.SubscriptionBuf),
 		canonicalStateChan:    make(chan *types.CrystallizedState, cfg.SubscriptionBuf),
 		incomingAttestation:   make(chan *types.Attestation, cfg.SubscriptionBuf),
-		devMode:               cfg.DevMode,
+		enablePOWChain:        cfg.EnablePOWChain,
 	}
 }
 
@@ -178,8 +178,12 @@ func (s *Service) CurrentAssignmentsAndGenesisTime(ctx context.Context, req *pb.
 	// This error is safe to ignore as we are initializing a proto timestamp
 	// from a constant value (genesis time is constant in the protocol
 	// and defined in the params.GetConfig().package).
-	// #nosec G104
-	protoGenesis, _ := ptypes.TimestampProto(params.GetConfig().GenesisTime)
+	// Get the genesis timestamp from persistent storage.
+	genesis, err := s.chainService.GenesisBlock()
+	if err != nil {
+		return nil, fmt.Errorf("could not get genesis block: %v", err)
+	}
+
 	cState := s.chainService.CurrentCrystallizedState()
 	var keys []*pb.PublicKey
 	if req.AllValidators {
@@ -192,14 +196,13 @@ func (s *Service) CurrentAssignmentsAndGenesisTime(ctx context.Context, req *pb.
 			return nil, errors.New("no public keys specified in request")
 		}
 	}
-	log.Info(len(cState.Validators()))
 	assignments, err := assignmentsForPublicKeys(keys, cState)
 	if err != nil {
 		return nil, fmt.Errorf("could not get assignments for public keys: %v", err)
 	}
 
 	return &pb.CurrentAssignmentsResponse{
-		GenesisTimestamp: protoGenesis,
+		GenesisTimestamp: genesis.Proto().GetTimestamp(),
 		Assignments:      assignments,
 	}, nil
 }
@@ -208,8 +211,8 @@ func (s *Service) CurrentAssignmentsAndGenesisTime(ctx context.Context, req *pb.
 // sends the request into a beacon block that can then be included in a canonical chain.
 func (s *Service) ProposeBlock(ctx context.Context, req *pb.ProposeRequest) (*pb.ProposeResponse, error) {
 	var powChainHash common.Hash
-	if s.devMode {
-		powChainHash = common.BytesToHash([]byte("stub"))
+	if !s.enablePOWChain {
+		powChainHash = common.BytesToHash([]byte{byte(req.GetSlotNumber())})
 	} else {
 		powChainHash = s.powChainService.LatestBlockHash()
 	}
@@ -361,7 +364,6 @@ func (s *Service) ValidatorAssignments(
 	for {
 		select {
 		case cState := <-s.canonicalStateChan:
-
 			log.Info("Sending new cycle assignments to validator clients")
 
 			var keys []*pb.PublicKey
