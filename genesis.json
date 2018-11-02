@@ -1,54 +1,64 @@
 {
   "validators": [
     {
-      "publicKey": "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB",
-      "balance": "32",
-      "endDynasty": "999999999999999999"
+      "pubkey": "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB",
+      "balance": "32000000000",
+      "exitSlot": "999999999999999999",
+      "status": "1"
     },
     {
-      "publicKey": "QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJC",
-      "balance": "32",
-      "endDynasty": "999999999999999999"
+      "pubkey": "QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJC",
+      "balance": "32000000000",
+      "exitSlot": "999999999999999999",
+      "status": "1"
     },
     {
-      "publicKey": "Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0ND",
-      "balance": "32",
-      "endDynasty": "999999999999999999"
+      "pubkey": "Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0ND",
+      "balance": "32000000000",
+      "exitSlot": "999999999999999999",
+      "status": "1"
     },
     {
-      "publicKey": "RERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERE",
-      "balance": "32",
-      "endDynasty": "999999999999999999"
+      "pubkey": "RERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERE",
+      "balance": "32000000000",
+      "exitSlot": "999999999999999999",
+      "status": "1"
     },
     {
-      "publicKey": "RUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVF",
-      "balance": "32",
-      "endDynasty": "999999999999999999"
+      "pubkey": "RUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVF",
+      "balance": "32000000000",
+      "exitSlot": "999999999999999999",
+      "status": "1"
     },
     {
-      "publicKey": "RkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZG",
-      "balance": "32",
-      "endDynasty": "999999999999999999"
+      "pubkey": "RkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZG",
+      "balance": "32000000000",
+      "exitSlot": "999999999999999999",
+      "status": "1"
     },
     {
-      "publicKey": "R0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dH",
-      "balance": "32",
-      "endDynasty": "999999999999999999"
+      "pubkey": "R0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dH",
+      "balance": "32000000000",
+      "exitSlot": "999999999999999999",
+      "status": "1"
     },
     {
-      "publicKey": "SEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhI",
-      "balance": "32",
-      "endDynasty": "999999999999999999"
+      "pubkey": "SEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhI",
+      "balance": "32000000000",
+      "exitSlot": "999999999999999999",
+      "status": "1"
     },
     {
-      "publicKey": "SUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJ",
-      "balance": "32",
-      "endDynasty": "999999999999999999"
+      "pubkey": "SUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJ",
+      "balance": "32000000000",
+      "exitSlot": "999999999999999999",
+      "status": "1"
     },
     {
-      "publicKey": "SkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpK",
-      "balance": "32",
-      "endDynasty": "999999999999999999"
+      "pubkey": "SkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpK",
+      "balance": "32000000000",
+      "exitSlot": "999999999999999999",
+      "status": "1"
     }
   ]
 }

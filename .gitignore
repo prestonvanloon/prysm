@@ -10,3 +10,8 @@ bazel-*
 # Coverage outputs
 coverage.txt
 profile.out
+
+# Nodejs
+node_modules
+yarn-error.log
+.vscode/

@@ -8,8 +8,8 @@ import (
 )
 
 // ShuffleValidatorsToCommittees shuffles validator indices and splits them by slot and shard.
-func ShuffleValidatorsToCommittees(seed common.Hash, activeValidators []*pb.ValidatorRecord, dynasty uint64, crosslinkStartShard uint64) ([]*pb.ShardAndCommitteeArray, error) {
-	indices := ActiveValidatorIndices(activeValidators, dynasty)
+func ShuffleValidatorsToCommittees(seed common.Hash, validators []*pb.ValidatorRecord, crosslinkStartShard uint64) ([]*pb.ShardAndCommitteeArray, error) {
+	indices := ActiveValidatorIndices(validators)
 
 	// split the shuffled list for slot.
 	shuffledValidators, err := utils.ShuffleIndices(seed, indices)
@@ -20,26 +20,42 @@ func ShuffleValidatorsToCommittees(seed common.Hash, activeValidators []*pb.Vali
 	return splitBySlotShard(shuffledValidators, crosslinkStartShard), nil
 }
 
+// InitialShardAndCommitteesForSlots initialises the committees for shards by shuffling the validators
+// and assigning them to specific shards.
+func InitialShardAndCommitteesForSlots(validators []*pb.ValidatorRecord) ([]*pb.ShardAndCommitteeArray, error) {
+	seed := make([]byte, 0, 32)
+	committees, err := ShuffleValidatorsToCommittees(common.BytesToHash(seed), validators, 1)
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize with 3 cycles of the same committees.
+	initialCommittees := make([]*pb.ShardAndCommitteeArray, 0, 3*params.GetConfig().CycleLength)
+	initialCommittees = append(initialCommittees, committees...)
+	initialCommittees = append(initialCommittees, committees...)
+	initialCommittees = append(initialCommittees, committees...)
+	return initialCommittees, nil
+}
+
 // splitBySlotShard splits the validator list into evenly sized committees and assigns each
 // committee to a slot and a shard. If the validator set is large, multiple committees are assigned
-// to a single slot and shard. If the validator set is small, a single committee is assigned to a shard
-// across multiple slots. See getCommitteeParams for more details.
+// to a single slot and shard. See getCommitteesPerSlot for more details.
 func splitBySlotShard(shuffledValidators []uint32, crosslinkStartShard uint64) []*pb.ShardAndCommitteeArray {
-	committeesPerSlot, slotsPerCommittee := getCommitteeParams(len(shuffledValidators))
+	committeesPerSlot := getCommitteesPerSlot(uint64(len(shuffledValidators)))
 
 	committeBySlotAndShard := []*pb.ShardAndCommitteeArray{}
 
 	// split the validator indices by slot.
-	validatorsBySlot := utils.SplitIndices(shuffledValidators, int(params.GetConfig().CycleLength))
+	validatorsBySlot := utils.SplitIndices(shuffledValidators, params.GetConfig().CycleLength)
 	for i, validatorsForSlot := range validatorsBySlot {
 		shardCommittees := []*pb.ShardAndCommittee{}
 		validatorsByShard := utils.SplitIndices(validatorsForSlot, committeesPerSlot)
-		shardStart := int(crosslinkStartShard) + i*committeesPerSlot/slotsPerCommittee
+		shardStart := crosslinkStartShard + uint64(i)*committeesPerSlot
 
 		for j, validatorsForShard := range validatorsByShard {
-			shardID := (shardStart + j) % params.GetConfig().ShardCount
+			shardID := (shardStart + uint64(j)) % params.GetConfig().ShardCount
 			shardCommittees = append(shardCommittees, &pb.ShardAndCommittee{
-				ShardId:   uint64(shardID),
+				Shard:     shardID,
 				Committee: validatorsForShard,
 			})
 		}
@@ -52,22 +68,21 @@ func splitBySlotShard(shuffledValidators []uint32, crosslinkStartShard uint64) [
 	return committeBySlotAndShard
 }
 
-// getCommitteeParams calculates the parameters for ShuffleValidatorsToCommittees.
-// If numActiveValidators > CycleLength * MinCommitteeSize, multiple committees are selected
-// to attest the same shard in a single slot.
-// If numActiveValidators < CycleLength * MinCommitteeSize, committees span across multiple slots
-// to attest the same shard.
-func getCommitteeParams(numValidators int) (committeesPerSlot, slotsPerCommittee int) {
-	if numValidators >= int(params.GetConfig().CycleLength*params.GetConfig().MinCommiteeSize) {
-		committeesPerSlot := numValidators/int(params.GetConfig().CycleLength*params.GetConfig().MinCommiteeSize*2) + 1
-		return committeesPerSlot, 1
-	}
+// getCommitteesPerSlot calculates the parameters for ShuffleValidatorsToCommittees.
+// The minimum value for committeesPerSlot is 1.
+// Otherwise, the value for committeesPerSlot is the smaller of
+// numActiveValidators / CycleLength /  (MinCommitteeSize*2) + 1 or
+// ShardCount / CycleLength.
+func getCommitteesPerSlot(numActiveValidators uint64) uint64 {
+	cycleLength := params.GetConfig().CycleLength
+	boundOnValidators := numActiveValidators/cycleLength/(params.GetConfig().MinCommiteeSize*2) + 1
+	boundOnShardCount := params.GetConfig().ShardCount / cycleLength
 
-	slotsPerCommittee = 1
-	for numValidators*slotsPerCommittee < int(params.GetConfig().MinCommiteeSize*params.GetConfig().CycleLength) &&
-		slotsPerCommittee < int(params.GetConfig().CycleLength) {
-		slotsPerCommittee *= 2
+	// Ensure that comitteesPerSlot is at least 1.
+	if boundOnShardCount == 0 {
+		return 1
+	} else if boundOnValidators > boundOnShardCount {
+		return boundOnShardCount
 	}
-
-	return 1, slotsPerCommittee
+	return boundOnValidators
 }

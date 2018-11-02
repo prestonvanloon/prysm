@@ -11,12 +11,12 @@ import (
 func TestFaultyShuffleIndices(t *testing.T) {
 	var list []uint32
 
-	for i := 0; i < params.GetConfig().MaxValidators+1; i++ {
+	for i := uint64(0); i < params.GetConfig().ModuloBias+1; i++ {
 		list = append(list, uint32(i))
 	}
 
 	if _, err := ShuffleIndices(common.Hash{'a'}, list); err == nil {
-		t.Error("Shuffle should have failed when validator count exceeds MaxValidators")
+		t.Error("Shuffle should have failed when validator count exceeds ModuloBias")
 	}
 }
 
@@ -53,7 +53,7 @@ func TestSplitIndices(t *testing.T) {
 	for i := 0; i < validators; i++ {
 		l = append(l, uint32(i))
 	}
-	split := SplitIndices(l, int(params.GetConfig().CycleLength))
+	split := SplitIndices(l, params.GetConfig().CycleLength)
 	if len(split) != int(params.GetConfig().CycleLength) {
 		t.Errorf("Split list failed due to incorrect length, wanted:%v, got:%v", params.GetConfig().CycleLength, len(split))
 	}
