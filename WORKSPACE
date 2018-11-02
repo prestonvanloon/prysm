@@ -181,7 +181,6 @@ go_repository(
 
 go_repository(
     name = "com_github_libp2p_go_libp2p_crypto",
-    build_file_proto_mode = "disable_global",
     commit = "7240b40a3ddc47c4d17c15baabcbe45e5219171b",
     importpath = "github.com/libp2p/go-libp2p-crypto",
     build_file_proto_mode = "disable_global",
@@ -339,7 +338,6 @@ go_repository(
 
 go_repository(
     name = "com_github_libp2p_go_libp2p_secio",
-    build_file_proto_mode = "disable_global",
     commit = "7b61c65c05f627ae0d02c4e9f5c5815ef1486d68",
     importpath = "github.com/libp2p/go-libp2p-secio",
     build_file_proto_mode = "disable_global",
@@ -669,7 +667,6 @@ go_repository(
 )
 
 go_repository(
-<<<<<<< HEAD
     name = "io_k8s_client_go",
     build_file_proto_mode = "disable_global",
     commit = "a5d40177db184c504978c4b08350ac9e367042b0",
