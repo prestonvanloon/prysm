@@ -25,6 +25,7 @@ import (
 	"github.com/prysmaticlabs/prysm/validator/rpcclient"
 	"github.com/prysmaticlabs/prysm/validator/txpool"
 	"github.com/prysmaticlabs/prysm/validator/types"
+	"github.com/prysmaticlabs/prysm/validator/validator"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
@@ -105,6 +106,10 @@ func NewValidatorClient(ctx *cli.Context) (*ValidatorClient, error) {
 	}
 
 	if err := ValidatorClient.registerPrometheusService(ctx); err != nil {
+		return nil, err
+	}
+
+	if err := ValidatorClient.registerValidatorService(ctx); err != nil {
 		return nil, err
 	}
 
@@ -266,4 +271,15 @@ func (s *ValidatorClient) registerPrometheusService(ctx *cli.Context) error {
 	hook := prometheus.NewLogrusCollector()
 	logrus.AddHook(hook)
 	return s.services.RegisterService(service)
+}
+
+func (s *ValidatorClient) registerValidatorService(c *cli.Context) error {
+
+	v := validator.NewValidatorService(
+		context.TODO(),
+		"",  /* beacon chain endpoint */
+		nil, /* p2p service */
+	)
+
+	return s.services.RegisterService(v)
 }
