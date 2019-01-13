@@ -8,13 +8,14 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gogo/protobuf/proto"
-	b "github.com/prysmaticlabs/prysm/beacon-chain/core/blocks"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/state"
 	v "github.com/prysmaticlabs/prysm/beacon-chain/core/validators"
 	"github.com/prysmaticlabs/prysm/beacon-chain/db"
 	pb "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"
 	"github.com/prysmaticlabs/prysm/shared/bitutil"
+	bytesutil "github.com/prysmaticlabs/prysm/shared/bytes"
 	"github.com/prysmaticlabs/prysm/shared/event"
+	"github.com/prysmaticlabs/prysm/shared/hashutil"
 	"github.com/prysmaticlabs/prysm/shared/p2p"
 	"github.com/prysmaticlabs/prysm/shared/params"
 	"github.com/prysmaticlabs/prysm/shared/slotticker"
@@ -152,7 +153,7 @@ func (sim *Simulator) run(slotInterval <-chan uint64) {
 		return
 	}
 
-	lastHash, err := b.Hash(lastBlock)
+	lastHash, err := hashutil.HashBeaconBlock(lastBlock)
 	if err != nil {
 		log.Errorf("Could not get hash of the latest block: %v", err)
 	}
@@ -176,7 +177,7 @@ func (sim *Simulator) run(slotInterval <-chan uint64) {
 				continue
 			}
 
-			hash, err := b.Hash(block)
+			hash, err := hashutil.HashBeaconBlock(block)
 			if err != nil {
 				log.Errorf("Could not hash simulated block: %v", err)
 				continue
@@ -394,7 +395,7 @@ func (sim *Simulator) SendChainHead(peer p2p.Peer) error {
 		return err
 	}
 
-	hash, err := b.Hash(block)
+	hash, err := hashutil.HashBeaconBlock(block)
 	if err != nil {
 		return err
 	}
