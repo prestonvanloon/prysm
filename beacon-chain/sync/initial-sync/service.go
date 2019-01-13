@@ -345,9 +345,7 @@ func (s *InitialSync) setBlockForInitialSync(block *pb.BeaconBlock) error {
 
 	s.chainService.IncomingBlockFeed().Send(block)
 
-	var blockStateRoot [32]byte
-	copy(blockStateRoot[:], block.StateRootHash32)
-	s.initialStateRootHash32 = blockStateRoot
+	s.initialStateRootHash32 = bytesutil.ToBytes32(block.StateRootHash32)
 
 	log.Infof("Saved block with hash %#x for initial sync", h)
 	s.currentSlot = block.Slot

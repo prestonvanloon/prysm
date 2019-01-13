@@ -132,6 +132,10 @@ func (s *Service) Start() {
 	pb.RegisterValidatorServiceServer(s.grpcServer, s)
 	pb.RegisterProposerServiceServer(s.grpcServer, s)
 	pb.RegisterAttesterServiceServer(s.grpcServer, s)
+
+	// Register reflection service on gRPC server.
+	reflection.Register(s.grpcServer)
+
 	go func() {
 		err = s.grpcServer.Serve(lis)
 		if err != nil {

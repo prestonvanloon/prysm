@@ -184,8 +184,7 @@ func (rs *RegularSync) receiveBlockAnnounce(msg p2p.Message) {
 	defer receiveBlockSpan.End()
 
 	data := msg.Data.(*pb.BeaconBlockAnnounce)
-	var h [32]byte
-	copy(h[:], data.Hash[:32])
+	h := bytesutil.ToBytes32(data.Hash[:32])
 
 	if rs.db.HasBlock(h) {
 		log.Debugf("Received a hash for a block that has already been processed: %#x", h)
@@ -340,8 +339,7 @@ func (rs *RegularSync) receiveAttestation(msg p2p.Message) {
 func (rs *RegularSync) handleBlockRequestByHash(msg p2p.Message) {
 	data := msg.Data.(*pb.BeaconBlockRequest)
 
-	var hash [32]byte
-	copy(hash[:], data.Hash)
+	hash := bytesutil.ToBytes32(data.Hash)
 
 	block, err := rs.db.GetBlock(hash)
 	if err != nil {

@@ -42,9 +42,7 @@ func NewGenesisBlock(stateRoot []byte) *pb.BeaconBlock {
 // IsRandaoValid verifies the validity of randao from block by comparing it with
 // the proposer's randao from the beacon state.
 func IsRandaoValid(blockRandao []byte, stateRandao []byte) bool {
-	var h [32]byte
-	copy(h[:], stateRandao)
-	return hashutil.Hash(blockRandao) == h
+	return hashutil.Hash(blockRandao) == bytesutil.ToBytes32(stateRandao)
 }
 
 // IsSlotValid compares the slot to the system clock to determine if the block is valid.
