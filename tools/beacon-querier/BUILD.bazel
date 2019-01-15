@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/prysmaticlabs/prysm/tools/beacon-querier",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//proto/beacon/rpc/v1:go_default_library",
+        "@org_golang_google_grpc//:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "beacon-querier",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

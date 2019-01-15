@@ -21,6 +21,7 @@ go_library(
         "//shared/cmd:go_default_library",
         "//shared/database:go_default_library",
         "//shared/debug:go_default_library",
+        "//shared/hashutil:go_default_library",
         "//shared/keystore:go_default_library",
         "//shared/p2p:go_default_library",
         "//shared/p2p/adapter/tracer:go_default_library",

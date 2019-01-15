@@ -344,7 +344,7 @@ func TestStatus_MinimumPeers(t *testing.T) {
 	s := Server{host: h}
 
 	err := s.Status()
-	if err == nil || err.Error() != "less than 5 peers" {
+	if err == nil || err.Error() != "less than 5 peers. Peer count = 0" {
 		t.Errorf("p2p server did not return expected status, instead returned %v", err)
 	}
 

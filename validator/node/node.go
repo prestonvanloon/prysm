@@ -4,7 +4,6 @@ package node
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
 	"os"
 	"os/signal"
@@ -15,6 +14,7 @@ import (
 	"github.com/prysmaticlabs/prysm/shared/cmd"
 	"github.com/prysmaticlabs/prysm/shared/database"
 	"github.com/prysmaticlabs/prysm/shared/debug"
+	"github.com/prysmaticlabs/prysm/shared/hashutil"
 	"github.com/prysmaticlabs/prysm/shared/keystore"
 	"github.com/prysmaticlabs/prysm/shared/p2p"
 	"github.com/prysmaticlabs/prysm/shared/prometheus"
@@ -47,10 +47,8 @@ type ValidatorClient struct {
 
 // GeneratePubKey generates a random public key for the validator, if they have not provided one.
 func GeneratePubKey() ([]byte, error) {
-	pubkey := make([]byte, 48)
-	_, err := rand.Read(pubkey)
-
-	return pubkey, err
+	pubkey := hashutil.Hash([]byte{byte(0)})
+	return pubkey[:], nil
 }
 
 // NewValidatorClient creates a new, Ethereum Serenity validator client.
@@ -75,6 +73,14 @@ func NewValidatorClient(ctx *cli.Context) (*ValidatorClient, error) {
 		pubKey = blspubkey.BufferedPublicKey()
 	} else {
 		pubKey = []byte(ctx.GlobalString(types.PubKeyFlag.Name))
+		if len(pubKey) == 0 {
+			var err error
+			pubKey, err = GeneratePubKey()
+			if err != nil {
+				return nil, err
+			}
+			log.Warn("Using validator pubkey of hash(0) since none was provided. This matches the first validator in the fake initial validator set.")
+		}
 	}
 
 	if err := ValidatorClient.startDB(ctx); err != nil {
@@ -89,27 +95,27 @@ func NewValidatorClient(ctx *cli.Context) (*ValidatorClient, error) {
 		return nil, err
 	}
 
-	if err := ValidatorClient.registerRPCClientService(ctx); err != nil {
-		return nil, err
-	}
-
-	if err := ValidatorClient.registerBeaconService(pubKey); err != nil {
-		return nil, err
-	}
-
-	if err := ValidatorClient.registerAttesterService(pubKey); err != nil {
-		return nil, err
-	}
-
-	if err := ValidatorClient.registerProposerService(); err != nil {
-		return nil, err
-	}
+	//	if err := ValidatorClient.registerRPCClientService(ctx); err != nil {
+	//		return nil, err
+	//	}
+	//
+	//	if err := ValidatorClient.registerBeaconService(pubKey); err != nil {
+	//		return nil, err
+	//	}
+	//
+	//	if err := ValidatorClient.registerAttesterService(pubKey); err != nil {
+	//		return nil, err
+	//	}
+	//
+	//	if err := ValidatorClient.registerProposerService(); err != nil {
+	//		return nil, err
+	//	}
 
 	if err := ValidatorClient.registerPrometheusService(ctx); err != nil {
 		return nil, err
 	}
 
-	if err := ValidatorClient.registerValidatorService(ctx); err != nil {
+	if err := ValidatorClient.registerValidatorService(ctx, pubKey); err != nil {
 		return nil, err
 	}
 
@@ -272,12 +278,17 @@ func (s *ValidatorClient) registerPrometheusService(ctx *cli.Context) error {
 	return s.services.RegisterService(service)
 }
 
-func (s *ValidatorClient) registerValidatorService(c *cli.Context) error {
+func (s *ValidatorClient) registerValidatorService(c *cli.Context, pubKey []byte) error {
+	var p *p2p.Server
+	if err := s.services.FetchService(&p); err != nil {
+		return err
+	}
 
 	v := validator.NewValidatorService(
 		context.TODO(),
-		"",  /* beacon chain endpoint */
-		nil, /* p2p service */
+		c.GlobalString(types.BeaconRPCProviderFlag.Name),
+		p,
+		pubKey,
 	)
 
 	return s.services.RegisterService(v)

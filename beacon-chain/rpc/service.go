@@ -125,9 +125,6 @@ func (s *Service) Start() {
 		s.grpcServer = grpc.NewServer()
 	}
 
-	// Register reflection service on gRPC server.
-	reflection.Register(s.grpcServer)
-
 	pb.RegisterBeaconServiceServer(s.grpcServer, s)
 	pb.RegisterValidatorServiceServer(s.grpcServer, s)
 	pb.RegisterProposerServiceServer(s.grpcServer, s)

@@ -2,7 +2,6 @@ package p2p
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"reflect"
@@ -149,7 +148,7 @@ func (s *Server) Stop() error {
 // Status returns an error if the p2p service does not have sufficient peers.
 func (s *Server) Status() error {
 	if peerCount(s.host) < 5 {
-		return errors.New("less than 5 peers")
+		return fmt.Errorf("less than 5 peers. Peer count = %d", peerCount(s.host))
 	}
 	return nil
 }
