@@ -150,10 +150,10 @@ func (v *ValidatorService) initialize() {
 	resp, err := v.beacon.CurrentAssignmentsAndGenesisTime(
 		v.ctx,
 		&pb.ValidatorAssignmentRequest{
-			AllValidators: true,
-			//PublicKeys: []*pb.PublicKey{
-			//	v.pubKey,
-			//},
+			//AllValidators: true,
+			PublicKeys: []*pb.PublicKey{
+				v.pubKey,
+			},
 		},
 	)
 	if err != nil {
@@ -191,7 +191,8 @@ func (v *ValidatorService) monitorAssignmentUpdates() {
 		}
 
 		if err != nil {
-			panic(err)
+			fmt.Printf("Received error from assignment stream: %v", err)
+			break
 		}
 
 		log.WithField("assignment", assignment).Info("Received assignment")
