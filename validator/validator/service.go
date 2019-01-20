@@ -8,6 +8,7 @@ import (
 	"time"
 
 	ptypes "github.com/gogo/protobuf/types"
+	p2ppb "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"
 	pb "github.com/prysmaticlabs/prysm/proto/beacon/rpc/v1"
 	p2pService "github.com/prysmaticlabs/prysm/shared/p2p"
 	"github.com/prysmaticlabs/prysm/shared/params"
@@ -61,6 +62,8 @@ func (v *ValidatorService) Start() {
 		"pubkey",
 		fmt.Sprintf("%#x", v.pubKey.PublicKey),
 	).Info("Starting service")
+
+	v.p2p.RegisterTopic(p2ppb.Topic_BEACON_BLOCK_ANNOUNCE.String(), &p2ppb.BeaconBlock{})
 
 	var err error
 	v.conn, err = grpc.DialContext(v.ctx, v.rpcendpoint, grpc.WithInsecure() /*TODO*/)
@@ -124,7 +127,27 @@ func (v *ValidatorService) MainRoutine() {
 
 				switch a.Role {
 				case pb.ValidatorRole_PROPOSER:
-					// do proposer stuff
+					// Propose a new block
+					//
+					blk := &p2ppb.BeaconBlock{
+						Slot: slot,
+
+						ParentRootHash32:   []byte{}, // TODO
+						StateRootHash32:    []byte{},
+						RandaoRevealHash32: []byte{},
+						DepositRootHash32:  []byte{},
+						Body: &p2ppb.BeaconBlockBody{
+							Attestations:      []*p2ppb.Attestation{},
+							ProposerSlashings: []*p2ppb.ProposerSlashing{},
+							CasperSlashings:   []*p2ppb.CasperSlashing{},
+							Deposits:          []*p2ppb.Deposit{},
+							Exits:             []*p2ppb.Exit{},
+						},
+					}
+
+					blk.Signature = [][]byte{}
+
+					v.p2p.Broadcast(blk)
 					break
 				case pb.ValidatorRole_ATTESTER:
 					// do attestor stuff
